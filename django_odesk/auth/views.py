@@ -11,7 +11,7 @@ def login(request, template_name='registration/odesk_login.html'):
     return render_to_response(template_name, {}, 
             context_instance=RequestContext(request))
 
-def authorize(request):
+def authenticate(request):
     if 'odesk_api_token' in request.session:
         del request.session['odesk_api_token']
     odesk_client = RequestClient(request)
