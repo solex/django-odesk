@@ -1,0 +1,7 @@
+*.*~
+*.db
+*.log
+*.pyc
+*.swo
+*.swp
+*.vim
