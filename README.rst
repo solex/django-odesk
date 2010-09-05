@@ -55,9 +55,8 @@ Using authentication
 --------------------
 
 To make the user authenticate with oDesk account, point them to the
-`django_odesk.auth.views.authenticate` view. 
+`django_odesk.auth.views.authenticate` view::
 
-::
     /odesk_auth/authenticate/
 
 That will send the user to odesk.com site for authentication, and store
@@ -97,11 +96,11 @@ It is up to you to change them.
     When you obtain an authentication token, you may use it to make API calls
     on behalf of the user.
     Authentication token *never expires* unless explicitly revoked, 
-    and it does not depend on user's logged-in status at odesk.com
+    and it does not depend on user's logged-in status at odesk.com.
     Normally a token is obtained only once and then stored in the session. The 
     user is considered authorized until the session is flushed.
     This may lead to the situation when a user is logged out at odesk.com site,
-    but is still logged in as odesk user at your site. 
+    but is still logged in as oDesk user at your site. 
     If you need to be sure every time that the user accessing the page is the
     same user that is currently logged in at odesk.com, set
     `settings.ODESK_AUTH_FORCE_RENEWAL` to True. This will initiate a full 
@@ -156,11 +155,11 @@ Using the decorator::
 The `auth_required` decorator works much like Django's `login_required` with 
 a few differences:
 
-    * It first checks for `settings.ODESK_LOGIN_URL` before the normal 
-    `settings.LOGIN_URL`
-    * Since it is not possible to pass `redirect_to` between requests to 
-    odesk.com and back, it stores the last url in the session variable 
-    `odesk_redirect_url`, which is then used by a `callback` view
+* It first checks for `settings.ODESK_LOGIN_URL` before the normal 
+  `settings.LOGIN_URL`
+* Since it is not possible to pass `redirect_to` between requests to 
+  odesk.com and back, it stores the last url in the session variable 
+  `odesk_redirect_url`, which is then used by a `callback` view
 
 
 As with Django's built-in authentication, you need to provide a login page
