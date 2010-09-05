@@ -3,7 +3,7 @@ Django oDesk
 ============
 
 Requirements
-------------
+============
 
     * `python-odesk`
 
