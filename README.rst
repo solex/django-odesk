@@ -65,7 +65,7 @@ The user will be asked to log-in at odesk.com, if they are not already, and
 to authorize your app, if they use it for the first time.
 
 The `AuthenticationMiddleware` populates the `request` with `odesk_user` 
-attribute. It is an instance of `ODeskUser` class with an interface similar
+attribute. It is an instance of `OdeskUser` class with an interface similar
 to `django.contrib.auth.models.User`. For non-authenticated user
 `request.odesk_user` is an instance of 
 `django.contrib.auth.models.AnonymousUser`
