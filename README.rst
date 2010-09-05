@@ -45,7 +45,7 @@ middleware classes::
         'django_odesk.auth.middleware.AuthenticationMiddleware',
     )
 
-.. admonition::
+.. note::
 
     Please note that `django_odesk.auth` relies on Django sessions mechanism,
     and thus `django.contrib.sessions.middleware.SessionMiddleware` has to be
@@ -123,7 +123,7 @@ Calling it removes all oDesk auth-related data from the session. It
 *does not* flush the session completely or otherwise affect other 
 authentication mechanisms.
 
-.. admonition::
+.. note::
     Please note that using `django_odesk.auth.logout()` doesn't affect the
     user's logged-in status at odesk.com in any way.
 
