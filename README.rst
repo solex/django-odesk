@@ -44,12 +44,15 @@ To do so, add the `django_odesk.auth.backends.ModelBackend` to your
         'django_odesk.auth.backends.ModelBackend',
     )
 
+You will also need to enable both `SessionMiddleware` and 
+`AuthenticationMiddleware`::
 
-.. note::
-
-    Please note that `django_odesk.auth` relies on Django sessions mechanism,
-    and thus `django.contrib.sessions.middleware.SessionMiddleware` has to be
-    enabled
+    MIDDLEWARE_CLASSES = (
+        'django.middleware.common.CommonMiddleware',
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        # ...
+    )
 
 Using authentication
 --------------------
@@ -61,10 +64,14 @@ To make the user authenticate with oDesk account, point them to the
 
 That will send the user to odesk.com site for authentication, and log them in
 upon redirecting back. 
-.. TODO: More on `authenticate` and API token
+
+.. TODO More on `authenticate` and API token
+
 The user will be asked to log-in at odesk.com, if they are not already, and
 to authorize your app, if they use it for the first time.
-.. TODO: User model creation 
+
+.. TODO User model creation 
+
 By default, the new `User` instance will be created for each unknown user. If 
 you want to change this, use the `ODESK_CREATE_UNKNOWN_USER` setting::
 
