@@ -8,7 +8,9 @@ class AppSettings(object):
         self.default_settings = default_settings
 
     def __getattr__(self, name):
-        return getattr(self.django_settings, name,
-                       getattr(self.default_settings, name))
+        try: 
+            return getattr(self.django_settings, name)
+        except AttributeError:
+            return getattr(self.default_settings, name)
 
 settings = AppSettings(django_settings, default_settings)
