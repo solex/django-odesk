@@ -4,9 +4,9 @@ except ImportError:
     import pickle
 from urllib2 import HTTPError
 
-from django.conf import settings
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.models import User
+from django_odesk.conf import settings
 from django_odesk.core.clients import DefaultClient
 
 class OdeskUser(object):
@@ -50,12 +50,12 @@ class OdeskUser(object):
 
     @property
     def is_staff(self):
-        admins = getattr(settings,'ODESK_ADMINS', ())
+        admins = settings.ODESK_ADMINS
         return (self.username in admins)
 
     @property
     def is_superuser(self):
-        superusers = getattr(settings,'ODESK_SUPERUSERS', ())
+        superusers = settings.ODESK_SUPERUSERS
         return (self.username in superusers)
 
     def is_anonymous(self):
@@ -131,14 +131,14 @@ class ModelBackend(BaseModelBackend):
 
     @property
     def create_unknown_user(self):
-        return getattr(settings,'ODESK_CREATE_UNKNOWN_USER', True)
+        return settings.ODESK_CREATE_UNKNOWN_USER
     
     def configure_user(self, user, auth_user):
         user.first_name = auth_user['first_name']
         user.last_name = auth_user['last_name']
         user.email = auth_user['mail']
-        admins = getattr(settings,'ODESK_ADMINS', ())
-        superusers = getattr(settings,'ODESK_SUPERUSERS', ())
+        admins = settings.ODESK_ADMINS
+        superusers = settings.ODESK_SUPERUSERS
         if user.username in admins:
             user.is_staff = True
         if user.username in superusers:
