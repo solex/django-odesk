@@ -20,7 +20,11 @@ def callback(request, redirect_url=None):
         request.session[ODESK_TOKEN_SESSION_KEY] = token
         #TODO: Get rid of (conceptually correct) additional request to odesk.com
         user = django_authenticate(token = token)
-        login(request, user)
+        if user:
+            login(request, user)
+        else:
+            pass 
+            #Probably the odesk auth backend is missing. Should we raise an error?
         redirect_url = request.session.pop(ODESK_REDIRECT_SESSION_KEY, 
                                            redirect_url)
         if not redirect_url:
