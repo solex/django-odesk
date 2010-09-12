@@ -5,7 +5,7 @@ except ImportError:
 from urllib2 import HTTPError
 
 from django.contrib.auth.backends import ModelBackend
-from django.contrib.auth.models import User
+from django_odesk.auth.models import get_user_model
 from django_odesk.conf import settings
 from django_odesk.core.clients import DefaultClient
 
@@ -108,15 +108,16 @@ class BaseModelBackend(ModelBackend):
         
         user = None
         username = self.clean_username(auth_user)
+        model = get_user_model()
 
         if self.create_unknown_user:
-            user, created = User.objects.get_or_create(username=username)
+            user, created = model.objects.get_or_create(username=username)
             if created:
                 user = self.configure_user(user, auth_user)
         else:
             try:
-                user = User.objects.get(username=username)
-            except User.DoesNotExist:
+                user = model.objects.get(username=username)
+            except model.DoesNotExist:
                 pass
         return user
 
@@ -125,6 +126,13 @@ class BaseModelBackend(ModelBackend):
 
     def configure_user(self, user, auth_user):
         return user
+
+    def get_user(self, user_id):
+        model = get_user_model()
+        try:
+            return model.objects.get(pk=user_id)
+        except model.DoesNotExist:
+            return None
         
         
 class ModelBackend(BaseModelBackend):

@@ -72,6 +72,8 @@ to authorize your app, if they use it for the first time.
 
 .. TODO User model creation 
 
+.. TODO Custom user model
+
 By default, the new `User` instance will be created for each unknown user. If 
 you want to change this, use the `ODESK_CREATE_UNKNOWN_USER` setting::
 
@@ -156,8 +158,6 @@ The `ODESK_CREATE_UNKNOWN_USER` setting obviously has no effect.
    Please note that, even though you can check for `is_staff` status, you
    cannot use the database-less authentication to access the built-in admin.
    It relies on the database and the built-in `User` model too heavily.
-
-
 
 
 Clients
