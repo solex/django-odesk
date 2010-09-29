@@ -117,18 +117,22 @@ Authentication without a database
 
 If for some reason you don't want to use Django's `User` model or the 
 database layer at all, you can still use oDesk authentication.
-All you need to change is an authentication backend. Use `SimpleBackend`
-instead of `ModelBackend`::
+To do so, add the `django_odesk.auth.middleware.AuthenticationMiddleware` to
+the list of middleware classes::
 
-    AUTHENTICATION_BACKENDS = (
-        'django_odesk.auth.backends.SimpleBackend',
+    MIDDLEWARE_CLASSES = (
+        'django.middleware.common.CommonMiddleware',
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django_odesk.auth.middleware.AuthenticationMiddleware',
+        # ...
     )
 
 .. note::
-    Please note that this type of authentication still relies on 
-    `django.contrib.auth.middleware.AuthenticationMiddleware`, although
-    it does not require `django.contrib.auth` to be added to the
-    `INSTALLED_APPS`
+
+    Please note that both Django's default 
+    `django.contrib.auth.middleware.AuthenticationMiddleware`
+    and `django_odesk.auth.middleware.AuthenticationMiddleware` cannot be 
+    used simultaneously. 
 
 When user authenticates, the `request.user` will be a special object with
 an interface similar to that of `django.contrib.auth.models.User`
@@ -151,14 +155,10 @@ Default values for "security-related" attributes are::
     False
 
 The settings `ODESK_ADMINS` and `ODESK_SUPERUSERS` may be used to change those
-values for specified users.
+values for specified users. Having user specified in `ODESK_ADMINS` but not in
+`ODESK_SUPERUSERS` has not much sense, as the user will not have permissions 
+to actually do anything.
 The `ODESK_CREATE_UNKNOWN_USER` setting obviously has no effect.
-
-.. note::
-   Please note that, even though you can check for `is_staff` status, you
-   cannot use the database-less authentication to access the built-in admin.
-   It relies on the database and the built-in `User` model too heavily.
-
 
 Clients
 =======
