@@ -1,7 +1,75 @@
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+from urllib2 import HTTPError
+
 from django.contrib.auth.backends import ModelBackend
 from django_odesk.auth.models import get_user_model
 from django_odesk.conf import settings
 from django_odesk.core.clients import DefaultClient
+
+class OdeskUser(object):
+
+    # Django authentication system uses only `user_id` value to get
+    # a User data from the backend. So we cannot acess the `request` to store
+    # the data in the session. Asking odesk.com for user data on each request
+    # is an obvious overkill.
+    # So we have to use `user_id` value as a transport that carries
+    # the user data between SimpleBackend and the AuthMiddleware.
+    # This seems a bit crazy, but I could not find a better way
+
+    @classmethod
+    def get(cls, user_id):
+        attrs = pickle.loads(user_id)
+        return cls(**attrs)
+    
+    def __init__(self, username, first_name, last_name, email):
+        self.username = username
+        self.first_name = first_name
+        self.last_name = last_name
+        self.email = email
+        self.is_active = True
+        self.backend = (SimpleBackend.__module__, 'SimpleBackend') 
+
+    def __unicode__(self):
+        return self.username
+
+    def __str__(self):
+        return unicode(self).encode('utf-8')
+
+    def save(self, *args, **kwargs):
+        return None
+
+    @property
+    def id(self):
+        attrs = {}
+        for name in ['username', 'first_name', 'last_name', 'email']:
+            attrs[name] = getattr(self, name)
+        return pickle.dumps(attrs)
+
+    @property
+    def is_staff(self):
+        admins = settings.ODESK_ADMINS
+        return (self.username in admins)
+
+    @property
+    def is_superuser(self):
+        superusers = settings.ODESK_SUPERUSERS
+        return (self.username in superusers)
+
+    def is_anonymous(self):
+        return False
+
+    def is_authenticated(self):
+        return True
+
+    def get_full_name(self):
+        "Returns the first_name plus the last_name, with a space in between."
+        full_name = u'%s %s' % (self.first_name, self.last_name)
+        return full_name.strip()
+
+    
 
 class SimpleBackend(object):
 
