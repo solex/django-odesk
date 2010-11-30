@@ -156,3 +156,30 @@ class ModelBackend(BaseModelBackend):
         return user
 
 
+class TeamAuthBackend(ModelBackend):
+
+    def authenticate(self, token=None):
+        client = DefaultClient(token)
+        try:
+            api_token, auth_user = client.auth.check_token()
+        except HTTPError:
+            return None
+
+        user = None
+        username = self.clean_username(auth_user)
+        model = get_user_model()
+        
+        for user in client.hr.get_team_users(team_id=settings.ODESK_AUTH_TEAM,\
+                                             active=True):
+            if username == user[u'email']:
+                if self.create_unknown_user:
+                    user, created = model.objects.get_or_create(username=username)
+                    if created:
+                        user = self.configure_user(user, auth_user)
+                else:
+                    try:
+                        user = model.objects.get(username=username)
+                    except model.DoesNotExist:
+                        pass
+                return user
+        return None
