@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ImproperlyConfigured
 from django_odesk.conf import settings
-    
+
 # DESIGN NOTE:
 # We could do something like this in the default settings:
 # ODESK_USER_MODEL = 'auth.User'
