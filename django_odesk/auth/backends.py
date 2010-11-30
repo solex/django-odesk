@@ -169,9 +169,10 @@ class TeamAuthBackend(ModelBackend):
         username = self.clean_username(auth_user)
         model = get_user_model()
         
-        for user in client.hr.get_team_users(team_id=settings.ODESK_AUTH_TEAM,\
-                                             active=True):
-            if username == user[u'email']:
+        userteams_refs = [team[u'reference'] for team in client.hr.get_teams()]
+        
+        for team in userteams_refs: 
+            if int(team) in settings.ODESK_AUTH_TEAMS:
                 if self.create_unknown_user:
                     user, created = model.objects.get_or_create(username=username)
                     if created:
@@ -183,3 +184,4 @@ class TeamAuthBackend(ModelBackend):
                         pass
                 return user
         return None
+
