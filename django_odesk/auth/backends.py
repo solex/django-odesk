@@ -182,6 +182,19 @@ class TeamAuthBackend(ModelBackend):
                         user = model.objects.get(username=username)
                     except model.DoesNotExist:
                         pass
+                
+                if int(team) in settings.ODESK_AUTH_ADMIN_TEAMS:
+                    user.is_staff=True 
+                else:
+                    user.is_staff=False
+
+                if int(team) in settings.ODESK_AUTH_SUPERUSER_TEAMS:
+                    user.is_superuser=True 
+                else:
+                    user.is_superuser=False
+                
+                user.save()
+                
                 return user
         return None
 
