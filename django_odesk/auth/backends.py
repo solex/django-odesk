@@ -183,13 +183,14 @@ class TeamAuthBackend(ModelBackend):
                     except model.DoesNotExist:
                         pass
                 
-                if int(team) in settings.ODESK_AUTH_ADMIN_TEAMS:
+                if int(team) in settings.ODESK_AUTH_ADMIN_TEAMS or username in settings.ODESK_ADMINS:
                     user.is_staff=True 
                 else:
                     user.is_staff=False
 
-                if int(team) in settings.ODESK_AUTH_SUPERUSER_TEAMS:
+                if int(team) in settings.ODESK_AUTH_SUPERUSER_TEAMS or username in settings.ODESK_SUPERUSERS:
                     user.is_superuser=True 
+                
                 else:
                     user.is_superuser=False
                 
