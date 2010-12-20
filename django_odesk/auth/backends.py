@@ -212,7 +212,7 @@ class IndividualAndTeamAuthBackend(TeamAuthBackend):
         username = self.clean_username(auth_user)
         model = get_user_model()
         
-        if username in the settings.ODESK_AUTH_USERS: 
+        if username in settings.ODESK_AUTH_USERS: 
             if self.create_unknown_user:
                 user, created = model.objects.get_or_create(username=username)
                 if created:
