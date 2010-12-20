@@ -169,10 +169,10 @@ class TeamAuthBackend(ModelBackend):
         username = self.clean_username(auth_user)
         model = get_user_model()
         
-        userteams_refs = [team[u'reference'] for team in client.hr.get_teams()]
+        userteams_refs = [team[u'id'] for team in client.hr.get_teams()]
         
         for team in userteams_refs: 
-            if int(team) in settings.ODESK_AUTH_TEAMS:
+            if team in settings.ODESK_AUTH_TEAMS:
                 if self.create_unknown_user:
                     user, created = model.objects.get_or_create(username=username)
                     if created:
@@ -183,12 +183,12 @@ class TeamAuthBackend(ModelBackend):
                     except model.DoesNotExist:
                         pass
                 
-                if int(team) in settings.ODESK_AUTH_ADMIN_TEAMS or username in settings.ODESK_ADMINS:
+                if team in settings.ODESK_AUTH_ADMIN_TEAMS or username in settings.ODESK_ADMINS:
                     user.is_staff=True 
                 else:
                     user.is_staff=False
 
-                if int(team) in settings.ODESK_AUTH_SUPERUSER_TEAMS or username in settings.ODESK_SUPERUSERS:
+                if team in settings.ODESK_AUTH_SUPERUSER_TEAMS or username in settings.ODESK_SUPERUSERS:
                     user.is_superuser=True 
                 
                 else:
