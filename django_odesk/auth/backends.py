@@ -169,33 +169,31 @@ class TeamAuthBackend(ModelBackend):
         username = self.clean_username(auth_user)
         model = get_user_model()
         
-        userteams_refs = [team[u'id'] for team in client.hr.get_teams()]
+        userteams = set(team[u'id'] for team in client.hr.get_teams())
         
-        for team in userteams_refs: 
-            if team in settings.ODESK_AUTH_TEAMS:
-                if self.create_unknown_user:
-                    user, created = model.objects.get_or_create(username=username)
-                    if created:
-                        user = self.configure_user(user, auth_user)
-                else:
-                    try:
-                        user = model.objects.get(username=username)
-                    except model.DoesNotExist:
-                        pass
-                
-                if team in settings.ODESK_AUTH_ADMIN_TEAMS or username in settings.ODESK_ADMINS:
-                    user.is_staff=True 
-                else:
-                    user.is_staff=False
+        if userteams.intersection(set(settings.ODESK_AUTH_TEAMS)):
+            if self.create_unknown_user:
+                user, created = model.objects.get_or_create(username=username)
+                if created:
+                    user = self.configure_user(user, auth_user)
+            else:
+                try:
+                    user = model.objects.get(username=username)
+                except model.DoesNotExist:
+                    pass
 
-                if team in settings.ODESK_AUTH_SUPERUSER_TEAMS or username in settings.ODESK_SUPERUSERS:
-                    user.is_superuser=True 
-                
-                else:
-                    user.is_superuser=False
-                
-                user.save()
-                
-                return user
+            if userteams.intersection(set(settings.ODESK_AUTH_ADMIN_TEAMS)) or username in settings.ODESK_ADMINS:
+                user.is_staff=True 
+            else:
+                user.is_staff=False
+
+            if userteams.intersection(set(settings.ODESK_AUTH_SUPERUSER_TEAMS)) or username in settings.ODESK_SUPERUSERS:
+                user.is_superuser=True 
+            else:
+                user.is_superuser=False
+            
+            user.save()
+
+            return user
         return None
 
