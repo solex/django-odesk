@@ -201,7 +201,7 @@ class TeamAuthBackend(ModelBackend):
         # TODO authorize subteams of parents in ODESK_AUTH_TEAMS
         auth_teams = userteams.intersection(set(settings.ODESK_AUTH_TEAMS))
         
-        if auth_teams:
+        if auth_teams or username in settings.ODESK_AUTH_USERS:
 
             if self.create_unknown_user:
                 user, created = model.objects.get_or_create(username=username)
@@ -232,44 +232,3 @@ class TeamAuthBackend(ModelBackend):
                 user.save()
 
         return user
-
-class IndividualAndTeamAuthBackend(TeamAuthBackend):
-
-    def authenticate(self, token=None):
-        client = DefaultClient(token)
-        try:
-            api_token, auth_user = client.auth.check_token()
-        except HTTPError:
-            return None
-
-        user = None
-        username = self.clean_username(auth_user)
-        model = get_user_model()
-        
-        if username in settings.ODESK_AUTH_USERS: 
-            if self.create_unknown_user:
-                user, created = model.objects.get_or_create(username=username)
-                if created:
-                    user = self.configure_user(user, auth_user)
-            else:
-                try:
-                    user = model.objects.get(username=username)
-                except model.DoesNotExist:
-                    pass
-            
-            if username in settings.ODESK_ADMINS:
-                user.is_staff=True 
-            else:
-                user.is_staff=False
-
-            if username in settings.ODESK_SUPERUSERS:
-                user.is_superuser=True 
-            
-            else:
-                user.is_superuser=False
-            
-            user.save()
-            
-            return user
-        
-        return super(IndividualAndTeamAuthBackend, self).authenticate(token)
