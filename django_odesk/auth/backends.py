@@ -5,6 +5,8 @@ except ImportError:
 from urllib2 import HTTPError
 
 from django.contrib.auth.backends import ModelBackend
+from django.contrib.auth.models import Group
+from django.db import transaction
 from django_odesk.auth.models import get_user_model
 from django_odesk.conf import settings
 from django_odesk.core.clients import DefaultClient
@@ -158,6 +160,32 @@ class ModelBackend(BaseModelBackend):
 
 class TeamAuthBackend(ModelBackend):
 
+    def sync_django_groups(self, user, userteams):
+        """
+        Assign existing `Group`s with userteam names to `user.groups`
+        """
+        from django.db import connection
+
+        def clear_groups(user):
+            cursor = connection.cursor()
+            cursor.execute("DELETE FROM auth_user_groups WHERE user_id=%s", params=(user.id,))
+
+        def bulk_groups_insert(user, groups_query): 
+            group_ids = filter(lambda gid: gid is not None, 
+                               (grp.get('id') for grp in groups_query.values('id')))
+            values = zip([user.id]*len(group_ids), group_ids)
+            sql_values = ','.join("(%i,%i)" % v for v in values)
+            cursor = connection.cursor()
+            cursor.execute("INSERT INTO auth_user_groups (user_id, group_id) VALUES %s" % sql_values)
+
+        @transaction.commit_on_success
+        def run_in_tx():
+            clear_groups(user)
+            bulk_groups_insert(user, Group.objects.filter(name__in=userteams))
+
+        run_in_tx()
+
+
     def authenticate(self, token=None):
         client = DefaultClient(token)
         try:
@@ -169,35 +197,41 @@ class TeamAuthBackend(ModelBackend):
         username = self.clean_username(auth_user)
         model = get_user_model()
         
-        userteams_refs = [team[u'id'] for team in client.hr.get_teams()]
+        userteams = set(team[u'id'] for team in client.hr.get_teams())
+        # TODO authorize subteams of parents in ODESK_AUTH_TEAMS
+        auth_teams = userteams.intersection(set(settings.ODESK_AUTH_TEAMS))
         
-        for team in userteams_refs: 
-            if team in settings.ODESK_AUTH_TEAMS:
-                if self.create_unknown_user:
-                    user, created = model.objects.get_or_create(username=username)
-                    if created:
-                        user = self.configure_user(user, auth_user)
-                else:
-                    try:
-                        user = model.objects.get(username=username)
-                    except model.DoesNotExist:
-                        pass
-                
-                if team in settings.ODESK_AUTH_ADMIN_TEAMS or username in settings.ODESK_ADMINS:
+        if auth_teams:
+
+            if self.create_unknown_user:
+                user, created = model.objects.get_or_create(username=username)
+                if created:
+                    user = self.configure_user(user, auth_user)
+            else:
+                try:
+                    user = model.objects.get(username=username)
+                except model.DoesNotExist:
+                    pass
+
+            if user is not None:
+
+                self.sync_django_groups(user, auth_teams)
+
+                if userteams.intersection(set(settings.ODESK_AUTH_ADMIN_TEAMS)) or \
+                   username in settings.ODESK_ADMINS:
                     user.is_staff=True 
                 else:
                     user.is_staff=False
 
-                if team in settings.ODESK_AUTH_SUPERUSER_TEAMS or username in settings.ODESK_SUPERUSERS:
+                if userteams.intersection(set(settings.ODESK_AUTH_SUPERUSER_TEAMS)) or \
+                   username in settings.ODESK_SUPERUSERS:
                     user.is_superuser=True 
-                
                 else:
                     user.is_superuser=False
                 
                 user.save()
-                
-                return user
-        return None
+
+        return user
 
 class IndividualAndTeamAuthBackend(TeamAuthBackend):
 
