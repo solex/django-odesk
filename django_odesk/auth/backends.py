@@ -174,9 +174,10 @@ class TeamAuthBackend(ModelBackend):
             group_ids = filter(lambda gid: gid is not None, 
                                (grp.get('id') for grp in groups_query.values('id')))
             values = zip([user.id]*len(group_ids), group_ids)
-            sql_values = ','.join("(%i,%i)" % v for v in values)
-            cursor = connection.cursor()
-            cursor.execute("INSERT INTO auth_user_groups (user_id, group_id) VALUES %s" % sql_values)
+            if len(values) > 0:
+                sql_values = ','.join("(%i,%i)" % v for v in values)
+                cursor = connection.cursor()
+                cursor.execute("INSERT INTO auth_user_groups (user_id, group_id) VALUES %s" % sql_values)
 
         @transaction.commit_on_success
         def run_in_tx():
