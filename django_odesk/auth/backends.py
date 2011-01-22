@@ -176,7 +176,7 @@ class TeamAuthBackend(ModelBackend):
 
         def clear_groups(user):
             cursor = connection.cursor()
-            cursor.execute("DELETE FROM auth_user_groups WHERE user_id=%s", params=(user.id,))
+            cursor.execute("DELETE FROM auth_user_groups WHERE user_id=%s", (user.id,))
 
         def bulk_groups_insert(user, groups_query): 
             group_ids = filter(lambda gid: gid is not None, 
