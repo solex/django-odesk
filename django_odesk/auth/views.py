@@ -23,14 +23,13 @@ def callback(request, redirect_url=None):
         if user:
             login(request, user)
         else:
-            pass 
+            pass
             #Probably the odesk auth backend is missing. Should we raise an error?
-        redirect_url = request.session.pop(ODESK_REDIRECT_SESSION_KEY, 
+        redirect_url = request.session.pop(ODESK_REDIRECT_SESSION_KEY,
                                            redirect_url)
         if not redirect_url:
-            redirect_url =  '/'   
+            redirect_url =  '/'
         return HttpResponseRedirect(redirect_url)
-    
+
     else:
         return HttpResponseRedirect(odesk_client.auth.auth_url())
-    
