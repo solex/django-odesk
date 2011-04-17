@@ -1,3 +1,5 @@
+import logging
+
 from django.http import HttpResponseRedirect
 from django.contrib.auth import authenticate as django_authenticate
 from django.contrib.auth import login, REDIRECT_FIELD_NAME
@@ -16,7 +18,16 @@ def callback(request, redirect_url=None):
     odesk_client = DefaultClient()
     frob = request.GET.get('frob', None)
     if frob:
-        token, auth_user = odesk_client.auth.get_token(frob)
+        try:
+            token, auth_user = odesk_client.auth.get_token(frob)
+        except Exception, exc:
+            msg = "get_token(%(frob)r) failed with %(exc)s" % {
+                'frob': frob,
+                'exc': exc,
+                'req': request,
+            }
+            logging.error(msg)
+            return HttpResponseRedirect(redirect_url or '/')
         request.session[ODESK_TOKEN_SESSION_KEY] = token
         #TODO: Get rid of (conceptually correct) additional request to odesk.com
         user = django_authenticate(token = token)
@@ -27,9 +38,7 @@ def callback(request, redirect_url=None):
             #Probably the odesk auth backend is missing. Should we raise an error?
         redirect_url = request.session.pop(ODESK_REDIRECT_SESSION_KEY,
                                            redirect_url)
-        if not redirect_url:
-            redirect_url =  '/'
-        return HttpResponseRedirect(redirect_url)
+        return HttpResponseRedirect(redirect_url or '/')
 
     else:
         return HttpResponseRedirect(odesk_client.auth.auth_url())
