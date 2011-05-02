@@ -25,14 +25,14 @@ class OdeskUser(object):
     def get(cls, user_id):
         attrs = pickle.loads(user_id)
         return cls(**attrs)
-    
+
     def __init__(self, username, first_name, last_name, email):
         self.username = username
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
         self.is_active = True
-        self.backend = (SimpleBackend.__module__, 'SimpleBackend') 
+        self.backend = (SimpleBackend.__module__, 'SimpleBackend')
 
     def __unicode__(self):
         return self.username
@@ -71,7 +71,7 @@ class OdeskUser(object):
         full_name = u'%s %s' % (self.first_name, self.last_name)
         return full_name.strip()
 
-    
+
 
 class SimpleBackend(object):
 
@@ -143,17 +143,25 @@ class ModelBackend(BaseModelBackend):
     def create_unknown_user(self):
         return settings.ODESK_CREATE_UNKNOWN_USER
 
-    def configure_user(self, user, auth_user):
+    def set_user_info(self, user, auth_user):
         user.first_name = auth_user['first_name']
         user.last_name = auth_user['last_name']
         user.email = auth_user['mail']
+        user.set_unusable_password()
+        return user
+
+    def set_user_status(self, user, auth_user):
         admins = settings.ODESK_ADMINS
         superusers = settings.ODESK_SUPERUSERS
         if user.username in admins:
             user.is_staff = True
         if user.username in superusers:
             user.is_superuser = True
-        user.set_unusable_password()
+        return user
+
+    def configure_user(self, user, auth_user):
+        self.set_user_info(user, auth_user)
+        self.set_user_status(user, auth_user)
         user.save()
         return user
 
@@ -168,10 +176,10 @@ class TeamAuthBackend(ModelBackend):
 
         def clear_groups(user):
             cursor = connection.cursor()
-            cursor.execute("DELETE FROM auth_user_groups WHERE user_id=%s", params=(user.id,))
+            cursor.execute("DELETE FROM auth_user_groups WHERE user_id=%s", (user.id,))
 
-        def bulk_groups_insert(user, groups_query): 
-            group_ids = filter(lambda gid: gid is not None, 
+        def bulk_groups_insert(user, groups_query):
+            group_ids = filter(lambda gid: gid is not None,
                                (grp.get('id') for grp in groups_query.values('id')))
             values = zip([user.id]*len(group_ids), group_ids)
             if len(values) > 0:
@@ -197,17 +205,16 @@ class TeamAuthBackend(ModelBackend):
         user = None
         username = self.clean_username(auth_user)
         model = get_user_model()
-        
+
         userteams = set(team[u'id'] for team in client.hr.get_teams())
         # TODO authorize subteams of parents in ODESK_AUTH_TEAMS
         auth_teams = userteams.intersection(set(settings.ODESK_AUTH_TEAMS))
-        
+
         if auth_teams or username in settings.ODESK_AUTH_USERS:
 
             if self.create_unknown_user:
                 user, created = model.objects.get_or_create(username=username)
-                if created:
-                    user = self.configure_user(user, auth_user)
+                user = self.set_user_info(user, auth_user)
             else:
                 try:
                     user = model.objects.get(username=username)
@@ -220,16 +227,18 @@ class TeamAuthBackend(ModelBackend):
 
                 if userteams.intersection(set(settings.ODESK_AUTH_ADMIN_TEAMS)) or \
                    username in settings.ODESK_ADMINS:
-                    user.is_staff=True 
+                    user.is_staff=True
                 else:
                     user.is_staff=False
 
                 if userteams.intersection(set(settings.ODESK_AUTH_SUPERUSER_TEAMS)) or \
                    username in settings.ODESK_SUPERUSERS:
-                    user.is_superuser=True 
+                    user.is_superuser=True
                 else:
                     user.is_superuser=False
-                
+
+                # attach api_token to user instance, so it can be passed to post_save signal handler
+                user.odesk_api_token = api_token
                 user.save()
 
         return user
