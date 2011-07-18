@@ -111,6 +111,11 @@ For simple cases you may just set login page to the
 
     LOGIN_URL = '/odesk_auth/authenticate/'
 
+Groups
+------
+
+
+.. TODO  Documenation
 
 Authentication without a database
 ---------------------------------

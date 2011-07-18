@@ -6,6 +6,7 @@ from urllib2 import HTTPError
 
 from django.contrib.auth.backends import ModelBackend
 from django_odesk.auth.models import get_user_model
+from django_odesk.auth.utils import sync_odesk_permissions
 from django_odesk.conf import settings
 from django_odesk.core.clients import DefaultClient
 
@@ -98,6 +99,8 @@ class SimpleBackend(object):
 class BaseModelBackend(ModelBackend):
 
     create_unknown_user = True
+    create_unknown_group = True
+    sync_permissions_on_login = True
 
     def authenticate(self, token=None):
         client = DefaultClient(token)
@@ -113,18 +116,22 @@ class BaseModelBackend(ModelBackend):
         if self.create_unknown_user:
             user, created = model.objects.get_or_create(username=username)
             if created:
-                user = self.configure_user(user, auth_user)
+                user = self.configure_user(user, auth_user, token)
         else:
             try:
                 user = model.objects.get(username=username)
             except model.DoesNotExist:
                 pass
+
+        if self.sync_permissions_on_login:
+            sync_odesk_permissions(user, token, self.create_unknown_group)
+
         return user
 
     def clean_username(self, auth_user):
-        return auth_user['mail']
+        return auth_user['uid']+'@odesk.com'
 
-    def configure_user(self, user, auth_user):
+    def configure_user(self, user, auth_user, token):
         return user
 
     def get_user(self, user_id):
@@ -136,12 +143,22 @@ class BaseModelBackend(ModelBackend):
         
         
 class ModelBackend(BaseModelBackend):
+    
+    supports_object_permissions = False
 
     @property
     def create_unknown_user(self):
         return settings.ODESK_CREATE_UNKNOWN_USER
+
+    @property
+    def create_unknown_group(self):
+        return settings.ODESK_CREATE_UNKNOWN_GROUP
+
+    @property
+    def sync_permissions_on_login(self):
+        return settings.ODESK_SYNC_PERMISSIONS_ON_LOGIN
     
-    def configure_user(self, user, auth_user):
+    def configure_user(self, user, auth_user, token):
         user.first_name = auth_user['first_name']
         user.last_name = auth_user['last_name']
         user.email = auth_user['mail']
@@ -153,4 +170,5 @@ class ModelBackend(BaseModelBackend):
             user.is_superuser = True
         user.set_unusable_password()
         user.save()
+        sync_odesk_permissions(user, token, self.create_unknown_group)
         return user
