@@ -129,7 +129,7 @@ user logs in by setting::
 Similar to creation of the unknown user, you can disable automatic creation
 of new groups by setting::
 
-    ODESK_CREATE_UNKNOWN_GROUP = True
+    ODESK_CREATE_UNKNOWN_GROUP = False
 
 Since Django's authentication system has no support for roles, `django-odeask`
 has limited support for "pseudo-roles". If the user has "admin" role in oDesk
