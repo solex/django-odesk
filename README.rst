@@ -114,12 +114,54 @@ For simple cases you may just set login page to the
 Groups
 ------
 
+`django-odesk` has support for Django groups. Groups are direct mapping
+of oDesk teams. For each team the user is a member of, the corresponding 
+`django.contrib.auth.models.Group` is created with the name in the form::
+    
+    company:team@odesk.com
 
-.. TODO  Documenation
+The synchronyzation between oDesk teams and user groups is happening on 
+user object's creation by default. You can make it happen each time the
+user logs in by setting::
+
+    ODESK_SYNC_PERMISSIONS_ON_LOGIN = True
+
+Similar to creation of the unknown user, you can disable automatic creation
+of new groups by setting::
+
+    ODESK_CREATE_UNKNOWN_GROUP = True
+
+Since Django's authentication system has no support for roles, `django-odeask`
+has limited support for "pseudo-roles". If the user has "admin" role in oDesk
+team, they become the member of additional group, with the name of the from::
+
+    company:team:admins@odesk.com
+
+Currently only admin role is supported.
+
+It is sometimes desirable to limit the view only to the members of the 
+specific oDesk team. `django-odesk` provides the convenient decorator to
+check for group membership::
+
+    from django_odesk.auth.decorators import group_required
+
+    @group_required('company:team@odesk.com')
+    def my_view(request)
+        ...
+
+You can also give the list of group names. The user passes test if they 
+belong to at least one of them::
+
+    from django_odesk.auth.decorators import group_required
+
+    @group_required(['company:team@odesk.com','company:team2@odesk.com'])
+    def my_view(request)
+        ...
+
 
 Authentication without a database
 ---------------------------------
-
+. 
 If for some reason you don't want to use Django's `User` model or the 
 database layer at all, you can still use oDesk authentication.
 All you need to change is an authentication backend. Use `SimpleBackend`
