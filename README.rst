@@ -137,7 +137,11 @@ team, they become the member of additional group, with the name of the from::
 
     company:team:admins@odesk.com
 
-Currently only admin role is supported.
+Currently only admin role is supported. 
+
+In order turn on the "pseudo-groups" feature, set the corresponding variable::
+
+    ODESK_CREATE_PSEUDO_GROUPS = True
 
 It is sometimes desirable to limit the view only to the members of the 
 specific oDesk team. `django-odesk` provides the convenient decorator to
@@ -158,10 +162,30 @@ belong to at least one of them::
     def my_view(request)
         ...
 
+Auth-only mode
+--------------
+
+Using oDesk APIs imposes an inherent secuirty risk. The person who has access 
+to the application server is capable of performing arbitrary actions on oDesk
+on behalf of everyone who've been using the application, uless the users have 
+de-authorized the application expicitly. But sometimes all you need is just 
+to authenticate oDesk users and not make any other API calls. You can reduce
+the mentioned risk, by not storing the API token anywhere after user has
+logged in.
+
+Since version 0.0.2 `django-odesk` supports "auth-only" mode that works 
+exactly like that. To turn it on, set::
+
+    ODESK_AUTH_ONLY = True
+
+Please note that if you use `django_odesk.core.clients.RequestClient`, either
+directly or with `RequestClientMiddleware` in auth-only mode, the client will 
+only be capable of calling public API methods.
+
 
 Authentication without a database
 ---------------------------------
-. 
+
 If for some reason you don't want to use Django's `User` model or the 
 database layer at all, you can still use oDesk authentication.
 All you need to change is an authentication backend. Use `SimpleBackend`

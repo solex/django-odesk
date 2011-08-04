@@ -4,6 +4,7 @@ from django.contrib.auth import login, REDIRECT_FIELD_NAME
 from django_odesk.core.clients import DefaultClient
 from django_odesk.auth import ODESK_REDIRECT_SESSION_KEY, \
                               ODESK_TOKEN_SESSION_KEY
+from django_odesk.conf import settings
 
 def authenticate(request):
     redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
@@ -17,7 +18,8 @@ def callback(request, redirect_url=None):
     frob = request.GET.get('frob', None)
     if frob:
         token, auth_user = odesk_client.auth.get_token(frob)
-        request.session[ODESK_TOKEN_SESSION_KEY] = token
+        if not settings.ODESK_AUTH_ONLY:
+            request.session[ODESK_TOKEN_SESSION_KEY] = token
         #TODO: Get rid of (conceptually correct) additional request to odesk.com
         user = django_authenticate(token = token)
         if user:
