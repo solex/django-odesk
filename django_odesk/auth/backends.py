@@ -100,6 +100,9 @@ class SimpleBackend(object):
 class BaseModelBackend(ModelBackend):
 
     create_unknown_user = True
+    
+    def __init__(self):
+        pass
 
     def authenticate(self, token=None):
         client = DefaultClient(token)
