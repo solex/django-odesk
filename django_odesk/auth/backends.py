@@ -74,11 +74,18 @@ class OdeskUser(object):
 
 
 class SimpleBackend(object):
+    
+    def __init__(self):
+        self.client = None
+        self.api_token = None
+        self.auth_user = None
 
     def authenticate(self, token=None):
         client = DefaultClient(token)
+        self.client = client
         try:
             api_token, auth_user = client.auth.check_token()
+            self.api_token, self.auth_user = api_token, auth_user
         except HTTPError:
             return None
 
