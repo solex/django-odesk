@@ -100,11 +100,19 @@ class SimpleBackend(object):
 class BaseModelBackend(ModelBackend):
 
     create_unknown_user = True
+    
+    def __init__(self, *args, **kwargs):
+        super(BaseModelBackend, self).__init__(*args, **kwargs)
+        self.api_token = None
+        self.auth_user = None
+        self.client = None
 
     def authenticate(self, token=None):
         client = DefaultClient(token)
+        self.client = client
         try:
             api_token, auth_user = client.auth.check_token()
+            self.api_token, self.auth_user = api_token, auth_user
         except HTTPError:
             return None
 
@@ -197,8 +205,10 @@ class TeamAuthBackend(ModelBackend):
 
     def authenticate(self, token=None):
         client = DefaultClient(token)
+        self.client = client
         try:
             api_token, auth_user = client.auth.check_token()
+            self.api_token, self.auth_user = api_token, auth_user
         except HTTPError:
             return None
 
