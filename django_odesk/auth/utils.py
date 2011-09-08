@@ -11,7 +11,11 @@ def get_odesk_permissions(auth_token):
     client = DefaultClient(auth_token)
     response = client.hr.get_user_role()
     permissions = []
-    for record in response['userrole']:
+    roles = response['userrole']
+    # oDesk API returns dict if there is single role
+    if isinstance(roles, dict):
+        roles = [roles]
+    for record in roles:
         data = dict(team_id = record['team__id'], role=record['role']) 
         if record['permissions']:
             data['permissions'] = record['permissions']['permission']
