@@ -11,6 +11,9 @@ def get_odesk_permissions(auth_token):
     client = DefaultClient(auth_token)
     response = client.hr.get_user_role()
     permissions = []
+    # oDesk API returns empty string if user has no membership in any group
+    if not response:
+        return []
     roles = response['userrole']
     # oDesk API returns dict if there is single role
     if isinstance(roles, dict):
