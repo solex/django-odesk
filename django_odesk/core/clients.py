@@ -1,7 +1,11 @@
+import logging
+
 from odesk import Client
 from django.core.exceptions import ImproperlyConfigured
 from django_odesk.conf import settings
-from django_odesk.auth import ODESK_TOKEN_SESSION_KEY
+from django_odesk.auth import ODESK_TOKEN_SESSION_KEY, ENCRYPTION_KEY_NAME
+from django_odesk.auth.encrypt import decrypt_token
+
 
 class DefaultClient(Client):
 
@@ -18,6 +22,14 @@ class DefaultClient(Client):
 class RequestClient(DefaultClient):
 
     def __init__(self, request):
-        api_token = request.session.get(ODESK_TOKEN_SESSION_KEY, None) 
+        from_session = request.session.get(ODESK_TOKEN_SESSION_KEY, None)
+        if settings.ODESK_ENCRYPT_API_TOKEN:
+            encryption_key = request.COOKIES.get(ENCRYPTION_KEY_NAME, None)
+            encrypted_token = from_session
+            api_token = None
+            if encryption_key and encrypted_token:
+                api_token = decrypt_token(encryption_key, encrypted_token)
+        else:
+            api_token = from_session
         super(RequestClient, self).__init__(api_token) 
     

@@ -6,6 +6,7 @@ Requirements
 ============
 
     * `python-odesk`
+    * `PyCrypto`
 
 
 Authentication
@@ -260,6 +261,14 @@ used in conjunction with `django_odesk.auth`::
         client = RequestClient(request) #Already authenticated
         client.team.get_teamrooms()
         # ...
+
+Note that the token is stored in django session encrypted (by default). The 
+encryption method used is AES. This key is stored in client
+browser cookies and has expiration time set to two hours.
+You can disable the encryption via specifying the following option 
+in your settings.py file:
+
+    ODESK_ENCRYPT_API_TOKEN = False
 
 If you plan to use odesk API calls extensively in your views, there is 
 another shortcut, the `django_odesk.core.middleware.RequestClientMiddleware`.
