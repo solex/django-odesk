@@ -11,11 +11,6 @@ from django_odesk.auth import ODESK_REDIRECT_SESSION_KEY, \
 from django_odesk.conf import settings
 from encrypt import encrypt_token
 
-try:
-    ENCRYPT_API_TOKEN = settings.ENCRYPT_API_TOKEN
-except AttributeError, e:
-    ENCRYPT_API_TOKEN = False
-
 def authenticate(request):
     redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
     request.session[ODESK_REDIRECT_SESSION_KEY] = redirect_to
@@ -38,7 +33,7 @@ def callback(request, redirect_url=None):
             logging.error(msg)
             return HttpResponseRedirect(redirect_url or '/')
         if not settings.ODESK_AUTH_ONLY:
-            if ENCRYPT_API_TOKEN:
+            if settings.ODESK_ENCRYPT_API_TOKEN:
                 encryption_key, encrypted_token = encrypt_token(token)
                 put_in_session = encrypted_token
             else:
@@ -55,7 +50,7 @@ def callback(request, redirect_url=None):
         redirect_url = request.session.pop(ODESK_REDIRECT_SESSION_KEY,
                                            redirect_url)
         response = HttpResponseRedirect(redirect_url or '/')
-        if not settings.ODESK_AUTH_ONLY and ENCRYPT_API_TOKEN:
+        if not settings.ODESK_AUTH_ONLY and settings.ODESK_ENCRYPT_API_TOKEN:
             expires = datetime.timedelta(hours = 2) + datetime.datetime.utcnow() # this is for Django 1.3
             # string conversion for django 1.2 somehow doesn't work either, so I use max_age 
             response.set_cookie(ENCRYPTION_KEY_NAME, encryption_key, expires = expires, max_age = 60*60*2)

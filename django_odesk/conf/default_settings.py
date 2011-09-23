@@ -28,3 +28,6 @@ ODESK_CREATE_PSEUDO_GROUPS = False
 #Do we want permissions (groups) to be synced with oDesk
 #each time user logs in
 ODESK_SYNC_PERMISSIONS_ON_LOGIN = False
+
+#Whether oDesk api_token should be encrypted or not
+ODESK_ENCRYPT_API_TOKEN = True

@@ -6,10 +6,6 @@ from django_odesk.conf import settings
 from django_odesk.auth import ODESK_TOKEN_SESSION_KEY, ENCRYPTION_KEY_NAME
 from django_odesk.auth.encrypt import decrypt_token
 
-try:
-    ENCRYPT_API_TOKEN = settings.ENCRYPT_API_TOKEN
-except AttributeError, e:
-    ENCRYPT_API_TOKEN = False
 
 class DefaultClient(Client):
 
@@ -27,7 +23,7 @@ class RequestClient(DefaultClient):
 
     def __init__(self, request):
         from_session = request.session.get(ODESK_TOKEN_SESSION_KEY, None)
-        if ENCRYPT_API_TOKEN:
+        if settings.ODESK_ENCRYPT_API_TOKEN:
             encryption_key = request.COOKIES.get(ENCRYPTION_KEY_NAME, None)
             encrypted_token = from_session
             api_token = None
