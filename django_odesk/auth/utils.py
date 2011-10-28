@@ -25,7 +25,8 @@ def sync_odesk_permissions(user, auth_token, create_groups=True):
     Syncs oDesk team roles/permissions with Django groups
     """
     permissions = get_odesk_permissions(auth_token)
-    user.groups.through.objects.filter(group__name__contains = '@odesk.com').delete()
+    user.groups.through.objects.filter(user=user, 
+        group__name__contains = '@odesk.com').delete()
     
     def get_or_create_group(name):
         created = False
