@@ -5,6 +5,8 @@ except ImportError:
 from urllib2 import HTTPError
 
 from django.contrib.auth.backends import ModelBackend
+from django.contrib.auth.models import Group
+from django.db import transaction
 from django_odesk.auth.models import get_user_model
 from django_odesk.auth.utils import sync_odesk_permissions
 from django_odesk.conf import settings
@@ -24,14 +26,14 @@ class OdeskUser(object):
     def get(cls, user_id):
         attrs = pickle.loads(user_id)
         return cls(**attrs)
-    
+
     def __init__(self, username, first_name, last_name, email):
         self.username = username
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
         self.is_active = True
-        self.backend = (SimpleBackend.__module__, 'SimpleBackend') 
+        self.backend = (SimpleBackend.__module__, 'SimpleBackend')
 
     def __unicode__(self):
         return self.username
@@ -70,14 +72,21 @@ class OdeskUser(object):
         full_name = u'%s %s' % (self.first_name, self.last_name)
         return full_name.strip()
 
-    
+
 
 class SimpleBackend(object):
+    
+    def __init__(self):
+        self.client = None
+        self.api_token = None
+        self.auth_user = None
 
     def authenticate(self, token=None):
         client = DefaultClient(token)
+        self.client = client
         try:
-            api_token, auth_user = client.auth.check_token() 
+            api_token, auth_user = client.auth.check_token()
+            self.api_token, self.auth_user = api_token, auth_user
         except HTTPError:
             return None
 
@@ -85,13 +94,13 @@ class SimpleBackend(object):
         first_name = auth_user['first_name']
         last_name = auth_user['last_name']
         email = auth_user['mail']
-        user = OdeskUser(username, first_name, last_name, 
+        user = OdeskUser(username, first_name, last_name,
                                        email)
         return user
 
     def get_user(self, user_id):
         return OdeskUser.get(user_id)
-    
+
     def has_module_perms(self, user_obj, app_label):
         return True
 
@@ -101,14 +110,20 @@ class BaseModelBackend(ModelBackend):
     create_unknown_user = True
     create_unknown_group = True
     sync_permissions_on_login = True
+    
+    def __init__(self, *args, **kwargs):
+        super(BaseModelBackend, self).__init__(*args, **kwargs)
+        pass
 
     def authenticate(self, token=None):
         client = DefaultClient(token)
+        self.client = client
         try:
-            api_token, auth_user = client.auth.check_token() 
+            api_token, auth_user = client.auth.check_token()
+            self.api_token, self.auth_user = api_token, auth_user
         except HTTPError:
             return None
-        
+
         user = None
         username = self.clean_username(auth_user)
         model = get_user_model()
@@ -140,12 +155,12 @@ class BaseModelBackend(ModelBackend):
             return model.objects.get(pk=user_id)
         except model.DoesNotExist:
             return None
-        
-        
+
+
 class ModelBackend(BaseModelBackend):
     
     supports_object_permissions = False
-
+    
     @property
     def create_unknown_user(self):
         return settings.ODESK_CREATE_UNKNOWN_USER

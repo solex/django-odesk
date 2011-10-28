@@ -6,6 +6,7 @@ Requirements
 ============
 
     * `python-odesk`
+    * `PyCrypto`
 
 
 Authentication
@@ -43,6 +44,10 @@ To do so, add the `django_odesk.auth.backends.ModelBackend` to your
         'django.contrib.auth.backends.ModelBackend',
         'django_odesk.auth.backends.ModelBackend',
     )
+
+.. note:: 
+   Please, note that `django_odesk` authentication backend may cause failing
+   Django tests. Please, read a paragraph below to find out why this happens.
 
 You will also need to enable both `SessionMiddleware` and 
 `AuthenticationMiddleware`::
@@ -261,6 +266,14 @@ used in conjunction with `django_odesk.auth`::
         client.team.get_teamrooms()
         # ...
 
+Note that the token is stored in django session encrypted (by default). The 
+encryption method used is AES. This key is stored in client
+browser cookies and has expiration time set to two hours.
+You can disable the encryption via specifying the following option 
+in your settings.py file:
+
+    ODESK_ENCRYPT_API_TOKEN = False
+
 If you plan to use odesk API calls extensively in your views, there is 
 another shortcut, the `django_odesk.core.middleware.RequestClientMiddleware`.
 It populates `request` with `odesk_client` attribute, which is an instance
@@ -280,3 +293,25 @@ Then you may use the client in your views::
         request.odesk_client.team.get_teamrooms()
         # ...
 
+Django Tests Failure
+====================
+
+If your project is using `django_odesk` with it's model authentication backend 
+`django_odesk.auth.backends.ModelBackend`, you will face problems with running
+standard Django's tests (in particular - `django.contrib.auth` tests): 
+   
+   `$ python manage.py test`
+
+will give you lot's of errors.
+This happens due to the nature of `django.contrib.auth` tests. While officially
+Django's auth system supports third-party backends, its tests are intended to
+check only standard (or very close to standard) backend. Really, `here <https://code.djangoproject.com/browser/django/trunk/django/contrib/auth/tests/views.py#L271>`_
+you can see intension to authenticate user via username/password pair which 
+is of course incorrect in our case.
+
+There is no way to prevent this by changing `django_odesk` package. Thus one who uses
+`django_odesk` has two possible choices:
+
+- ignore tests failure
+- add Django's standard `django.contrib.auth.backends.ModelBackend` to the end of
+  `AUTHENTICATION_BACKENDS` tuple in your `settings.py` file.  
